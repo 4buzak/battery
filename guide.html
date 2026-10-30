@@ -132,7 +132,7 @@
   }
   .grid { display: grid; gap: 14px; }
   .grid-2 { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
-  .grid-4 { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+  .grid-4 { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
 
   .goal-list { margin: 0; padding-left: 22px; }
   .goal-list li { margin-bottom: 6px; }
@@ -264,6 +264,7 @@
     <a href="#part1">실험 1</a>
     <a href="#sanding">표면 정리</a>
     <a href="#part2">실험 2</a>
+    <a href="#ammonia">실험 3</a>
     <a href="#cleanup">정리·반납</a>
     <a href="#safety">안전</a>
   </nav>
@@ -276,6 +277,7 @@
         <li>Cu, Zn 금속판을 두 금속 이온 용액에 각각 담가 어느 쪽 용액의 색이 변하는지 관찰한다.</li>
         <li>Cu와 Zn으로 화학전지(다니엘 전지)를 만들고 전압을 측정한다.</li>
         <li>측정한 전압을 표준환원전위로 계산한 이론값과 비교한다.</li>
+        <li>각 용액에 암모니아수를 넣었을 때 전압이 어떻게 변하는지 관찰한다.</li>
       </ol>
     </div>
   </section>
@@ -376,11 +378,12 @@
           <li><span class="chip sol">Cu²⁺</span><div><div class="name">질산구리 Cu(NO₃)₂ 용액</div><div class="note">푸른색 용액</div></div></li>
           <li><span class="chip sol">Zn²⁺</span><div><div class="name">질산아연 Zn(NO₃)₂ 용액</div><div class="note">무색 용액</div></div></li>
           <li><span class="chip etc">🌉</span><div><div class="name">염다리</div><div class="note">시판 염다리 사용</div></div></li>
+          <li><span class="chip sol">NH₃</span><div><div class="name">암모니아수</div><div class="note">스포이트로 넣기</div></div></li>
         </ul>
       </div>
       <div class="card">
         <ul class="materials">
-          <li><span class="chip etc">🧪</span><div><div class="name">비커</div></div></li>
+          <li><span class="chip etc">🧪</span><div><div class="name">비커, 스포이트</div></div></li>
           <li><span class="chip etc">V</span><div><div class="name">전압계(멀티미터)</div></div></li>
           <li><span class="chip etc">🔌</span><div><div class="name">집게 전선</div><div class="note">빨간색 1개, 검은색 1개</div></div></li>
           <li><span class="chip etc">▤</span><div><div class="name">사포</div><div class="note">금속판 표면 정리용</div></div></li>
@@ -409,8 +412,13 @@
         <div class="step-title">화학전지 실험</div>
         <p class="step-desc">Cu–Zn 전지를 만들고 전압 측정</p>
       </div>
-      <div class="card sand">
+      <div class="card">
         <div class="step-label">STEP 4</div>
+        <div class="step-title">암모니아수 넣기</div>
+        <p class="step-desc">Cu 쪽, Zn 쪽 순서로 넣고 각각 전압 측정</p>
+      </div>
+      <div class="card sand">
+        <div class="step-label">STEP 5</div>
         <div class="step-title">정리 및 반납</div>
         <p class="step-desc">금속판을 사포로 닦아 반납</p>
       </div>
@@ -459,7 +467,7 @@
       <li><strong>Zn 판</strong>은 <strong>Zn(NO₃)₂ 용액</strong>에, <strong>Cu 판</strong>은 <strong>Cu(NO₃)₂ 용액</strong>에 담급니다. 각 금속판을 같은 금속의 이온 용액에 담그는 점에 주의하세요.</li>
       <li>염다리의 양 끝을 두 비커의 용액에 각각 담가 연결합니다.</li>
       <li>집게 전선으로 전압계를 연결합니다. <strong>빨간색 단자는 Cu 판</strong>, <strong>검은색 단자(COM)는 Zn 판</strong>에 연결합니다.</li>
-      <li>전압계의 값이 안정되면 측정값을 읽습니다.</li>
+      <li>전압계의 값이 안정되면 측정값을 읽습니다. <strong>(전압 측정 ①)</strong></li>
       <li>측정값을 이론 전압 1.10 V와 비교합니다.</li>
     </ol>
     <div class="callout info">
@@ -471,9 +479,28 @@
     </div>
   </section>
 
+  <!-- 암모니아수 -->
+  <section id="ammonia">
+    <h2><span class="num">8</span>실험 3 · 암모니아수 넣기</h2>
+    <p>전압 측정 ①을 마친 전지를 그대로 두고, 한쪽 용액씩 암모니아수를 넣으며 전압 변화를 관찰합니다.</p>
+    <ol class="steps">
+      <li>스포이트로 암모니아수를 <strong>Cu(NO₃)₂ 용액</strong>에 넣습니다.</li>
+      <li>용액의 변화를 관찰하고, 전압계의 값이 안정되면 읽습니다. <strong>(전압 측정 ②)</strong></li>
+      <li>이어서 암모니아수를 <strong>Zn(NO₃)₂ 용액</strong>에 넣습니다.</li>
+      <li>용액의 변화를 관찰하고, 전압계의 값이 안정되면 읽습니다. <strong>(전압 측정 ③)</strong></li>
+    </ol>
+    <div class="callout info">
+      <div class="icon">💡</div>
+      <div>
+        <p><strong>생각해 볼 점</strong></p>
+        <p>측정 ①, ②, ③의 전압을 비교해 보세요. 암모니아수를 넣은 쪽 용액에서 금속 이온에 어떤 일이 일어났을지 생각해 보세요.</p>
+      </div>
+    </div>
+  </section>
+
   <!-- 정리 -->
   <section id="cleanup">
-    <h2><span class="num">8</span>정리 및 반납</h2>
+    <h2><span class="num">9</span>정리 및 반납</h2>
     <ol class="steps">
       <li>전압계와 집게 전선을 분리합니다.</li>
       <li>금속판과 염다리를 용액에서 꺼냅니다.</li>
@@ -485,12 +512,13 @@
 
   <!-- 안전 -->
   <section id="safety">
-    <h2><span class="num">9</span>안전 수칙</h2>
+    <h2><span class="num">10</span>안전 수칙</h2>
     <div class="callout danger">
       <div class="icon">🛑</div>
       <div>
         <p><strong>실험 중 보안경과 장갑을 반드시 착용합니다.</strong></p>
         <p>질산구리와 질산아연 용액은 피부와 눈에 자극을 줄 수 있습니다. 피부에 묻으면 즉시 많은 물로 씻어 내고, 눈에 들어가면 세안기로 충분히 씻은 뒤 조교에게 알립니다.</p>
+        <p>암모니아수는 자극적인 기체가 나오므로 냄새를 직접 맡지 말고, 환기되는 곳(후드)에서 다룹니다.</p>
         <p>금속 이온이 포함된 용액은 수생 환경에 해로우므로 절대 하수구에 버리지 않습니다.</p>
       </div>
     </div>

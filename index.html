@@ -169,6 +169,8 @@
       <g id="s5" class="scene"></g>
       <g id="s6" class="scene"></g>
       <g id="s7" class="scene"></g>
+      <g id="s8" class="scene"></g>
+      <g id="s9" class="scene"></g>
     </svg>
   </div>
 
@@ -241,7 +243,7 @@
      </g>`;
 
   // Cu–Zn cell. anim=true: assemble step by step. mid: extra markup inside the solution layer.
-  const cell = (anim, mid = '', top = '') => {
+  const cell = (anim, mid = '', top = '', vtext = '0.00', vid = 'volt') => {
     const a = (cls, d, extra = '') => anim ? `class="${cls}" ${st(d, extra)}` : '';
     return `
       ${table()}
@@ -259,7 +261,7 @@
       ${beakerFront(520, 230, CU_SOL)}
       <text x="200" y="430" class="lbl">Zn(NO₃)₂ 용액</text>
       <text x="600" y="430" class="lbl">Cu(NO₃)₂ 용액</text>
-      <g ${a('pop', 2.4)}>${voltmeter(anim ? '' : 'volt', anim ? '0.00' : '0.00')}</g>
+      <g ${a('pop', 2.4)}>${voltmeter(anim ? '' : vid, vtext)}</g>
       <g ${a('fi', 3.0)}><path d="M200 207 C200 110 330 170 365 118" pathLength="1" fill="none" stroke="#222" stroke-width="5" stroke-linecap="round" ${anim ? `class="draw" ${st(3.0)}` : ''}/></g>
       <g ${a('fi', 3.5)}><path d="M600 207 C600 110 470 170 435 118" pathLength="1" fill="none" stroke="#e63946" stroke-width="5" stroke-linecap="round" ${anim ? `class="draw" ${st(3.5)}` : ''}/></g>
       <g ${a('pop', 3.0)}><rect x="191" y="200" width="18" height="16" rx="3" fill="#222" stroke="${OL}" stroke-width="2"/></g>
@@ -307,28 +309,35 @@
       <path d="M-30 36 V-18 Q-30 -36 -12 -36 H12 Q30 -36 30 -18 V36" fill="none" stroke="${OL}" stroke-width="18" stroke-linecap="round"/>
       <path d="M-30 36 V-18 Q-30 -36 -12 -36 H12 Q30 -36 30 -18 V36" fill="none" stroke="#fff0b8" stroke-width="11" stroke-linecap="round"/>`,
       '염다리', '시판 제품')}
-    ${item(175, 320, 1.1, `
+    ${item(100, 320, 1.1, `
       <rect x="-40" y="-36" width="80" height="62" rx="10" fill="#ffd23f" stroke="${OL}" stroke-width="3"/>
       <rect x="-30" y="-27" width="60" height="26" rx="5" fill="#163828"/>
       <text x="22" y="-8" font-size="15" text-anchor="end" style="fill:#7dffa6;font-family:monospace">0.00</text>
       <circle cx="-14" cy="13" r="6" fill="#222"/><circle cx="14" cy="13" r="6" fill="#e63946"/>`,
       '전압계', '멀티미터')}
-    ${item(325, 320, 1.3, `
+    ${item(250, 320, 1.3, `
       <path d="M-34 30 C-30 -20 0 0 -6 -34" fill="none" stroke="#222" stroke-width="5" stroke-linecap="round"/>
       <path d="M0 30 C10 -20 34 0 30 -34" fill="none" stroke="#e63946" stroke-width="5" stroke-linecap="round"/>
       <rect x="-14" y="-44" width="16" height="14" rx="3" fill="#222" stroke="${OL}" stroke-width="2"/>
       <rect x="22" y="-44" width="16" height="14" rx="3" fill="#e63946" stroke="${OL}" stroke-width="2"/>`,
       '집게 전선', '빨강 · 검정')}
-    ${item(475, 320, 1.5, `
+    ${item(400, 320, 1.5, `
       <rect x="-40" y="-28" width="80" height="56" rx="6" fill="url(#grit)" stroke="${OL}" stroke-width="3" transform="rotate(-8)"/>`,
       '사포')}
-    ${item(625, 320, 1.7, `
+    ${item(550, 320, 1.7, `
       <path d="M-44 -6 Q0 -26 44 -6" fill="none" stroke="${OL}" stroke-width="5"/>
       <rect x="-38" y="-20" width="34" height="28" rx="11" fill="#bde0fe" stroke="${OL}" stroke-width="3"/>
       <rect x="4" y="-20" width="34" height="28" rx="11" fill="#bde0fe" stroke="${OL}" stroke-width="3"/>
       <rect x="-6" y="-10" width="12" height="7" fill="${OL}"/>
       <g transform="translate(0 30) scale(.45)">${glove()}</g>`,
-      '보안경 · 장갑')}`;
+      '보안경 · 장갑')}
+    ${item(700, 320, 1.9, `
+      <rect x="-26" y="-22" width="40" height="60" rx="8" fill="#eef6f8" stroke="${OL}" stroke-width="3"/>
+      <rect x="-20" y="-32" width="28" height="12" rx="3" fill="#6c757d" stroke="${OL}" stroke-width="2.5"/>
+      <text x="-6" y="16" font-size="11" text-anchor="middle">NH₃</text>
+      <rect x="22" y="-24" width="8" height="44" rx="3" fill="#fff" stroke="${OL}" stroke-width="2.5" transform="rotate(18 26 0)"/>
+      <ellipse cx="32" cy="-30" rx="9" ry="13" fill="#ff8fab" stroke="${OL}" stroke-width="2.5" transform="rotate(18 32 -30)"/>`,
+      '암모니아수', '스포이트')}`;
 
   function glove() {
     return `<g>
@@ -490,7 +499,7 @@
     <text x="400" y="62" font-size="32" text-anchor="middle" class="big">안전 수칙</text>
     <g class="pop" ${st(2.0)}>
       <rect x="215" y="360" width="370" height="54" rx="27" fill="#ff6b6b" stroke="${OL}" stroke-width="4"/>
-      <text x="400" y="395" font-size="20" text-anchor="middle" style="fill:#fff">실험 시작부터 끝까지 지켜요!</text>
+      <text x="400" y="395" font-size="20" text-anchor="middle" style="fill:#fff">암모니아수는 환기하며 사용해요!</text>
     </g>
     ${sCard(30, .1, '보안경 착용', `
       <path d="M-58 -2 Q0 -30 58 -2" fill="none" stroke="${OL}" stroke-width="6"/>
@@ -512,15 +521,42 @@
         <path d="M-35 -35 L35 35" stroke="#e63946" stroke-width="9" stroke-linecap="round"/>
       </g>`)}`;
 
+  // ---------- Scenes: add ammonia ----------
+  const dropper = (x, d) =>
+    `<g class="drop" ${st(d, '--dy:-160px')}>
+       <rect x="${x - 6}" y="188" width="12" height="66" rx="3" fill="#fff" stroke="${OL}" stroke-width="3"/>
+       <path d="M${x - 6} 248 L${x} 262 L${x + 6} 248" fill="#fff" stroke="${OL}" stroke-width="3" stroke-linejoin="round"/>
+       <rect x="${x - 3}" y="214" width="6" height="34" rx="2" fill="#cfe8ef"/>
+       <ellipse cx="${x}" cy="176" rx="15" ry="20" fill="#ff8fab" stroke="${OL}" stroke-width="3"/>
+     </g>
+     ${[0, .35, .7].map(k => `<path class="fall" ${st(d + 1 + k)} d="M${x} 266 q-6 9 0 12 q6 -3 0 -12z" fill="#cfe8ef" stroke="${OL}" stroke-width="2"/>`).join('')}
+     <g class="pop" ${st(d + 1.3)}><ellipse cx="${x}" cy="281" rx="16" ry="4" fill="none" stroke="#fff" stroke-width="3"/></g>`;
+  const nh3Tag = (x, d, side) =>
+    `<g class="pop" ${st(d)}>
+       <rect x="${x}" y="24" width="270" height="70" rx="14" fill="#fff" stroke="${OL}" stroke-width="4"/>
+       <text x="${x + 135}" y="52" font-size="18" text-anchor="middle">💧 암모니아수 넣기</text>
+       <text x="${x + 135}" y="80" font-size="16" text-anchor="middle" style="fill:#5c6270">${side} 용액에</text>
+     </g>`;
+  const askPill = (d, n) =>
+    `<g class="pop" ${st(d)}>
+       <rect x="287" y="292" width="226" height="64" rx="18" fill="#fff" stroke="${OL}" stroke-width="3"/>
+       <text x="400" y="318" font-size="15" text-anchor="middle" style="fill:${CU}">전압 측정 ${n}</text>
+       <text x="400" y="342" font-size="16" text-anchor="middle">전압이 어떻게 변할까요?</text>
+     </g>`;
+  const sNH3cu = cell(false, '', `${nh3Tag(510, .1, 'Cu(NO₃)₂')}${dropper(655, .4)}${askPill(2.8, '②')}`, '?.??', '');
+  const sNH3zn = cell(false, '', `${nh3Tag(20, .1, 'Zn(NO₃)₂')}${dropper(150, .4)}${askPill(2.8, '③')}`, '?.??', '');
+
   const scenes = [
     { html: s0, chip: '시작', title: '화학전지 실험', text: 'Cu와 Zn 금속판, 두 가지 이온 용액으로 실험 과정을 미리 살펴봅니다.', dur: 6 },
-    { html: s1, chip: '준비', title: '준비물', text: '금속판 2종, 용액 2종, 시판 염다리와 전압계·집게 전선·사포를 준비하고 보안경과 장갑을 착용합니다.', dur: 7 },
+    { html: s1, chip: '준비', title: '준비물', text: '금속판 2종, 용액 2종, 시판 염다리, 암모니아수와 스포이트, 전압계·집게 전선·사포를 준비하고 보안경과 장갑을 착용합니다.', dur: 7 },
     { html: s2, chip: 'STEP 1', title: '금속판 담그기', text: 'Zn 판과 Cu 판을 각각 Cu(NO₃)₂ 용액과 Zn(NO₃)₂ 용액 양쪽에 담그고, 약 10초 동안 어느 쪽 용액의 색이 변하는지 관찰합니다.', dur: 9 },
     { html: s3, chip: 'STEP 2', title: '사포로 표면 정리', text: '화학전지 실험으로 넘어가기 전에 Cu 판과 Zn 판을 사포로 긁어 표면을 깨끗하게 만듭니다. 금속 광택이 보일 때까지!', dur: 9 },
     { html: s4, chip: 'STEP 3', title: '화학전지 만들기', text: 'Zn 판은 Zn(NO₃)₂에, Cu 판은 Cu(NO₃)₂에 담그고, 염다리로 두 용액을 연결한 뒤 전압계를 연결합니다.', dur: 8 },
-    { html: s5, chip: 'STEP 3', title: '전압 측정', text: '전자는 도선을 따라 Zn에서 Cu로 이동하고, 염다리 속 이온이 양쪽 용액의 전하 균형을 맞춥니다. 값이 안정되면 읽고 이론값 1.10 V와 비교합니다.', dur: 10 },
-    { html: s6, chip: 'STEP 4', title: '정리 및 반납', text: '전선을 분리하고 금속판을 꺼낸 뒤, 모든 금속판은 사포로 닦아서 반납합니다. 용액은 지정된 폐액통에 버립니다.', dur: 8 },
-    { html: s7, chip: '안전', title: '안전 수칙', text: '보안경과 장갑을 꼭 착용하고, 용액이 피부에 묻으면 물로 씻습니다. 금속 이온 용액은 절대 하수구에 버리지 않습니다.', dur: 7 },
+    { html: s5, chip: 'STEP 3', title: '전압 측정 ①', text: '전자는 도선을 따라 Zn에서 Cu로 이동하고, 염다리 속 이온이 양쪽 용액의 전하 균형을 맞춥니다. 값이 안정되면 읽고 이론값 1.10 V와 비교합니다.', dur: 10 },
+    { html: sNH3cu, chip: 'STEP 4', title: '암모니아수 넣기 · Cu(NO₃)₂ 쪽', text: '처음 전압을 잰 뒤, 스포이트로 암모니아수를 Cu(NO₃)₂ 용액에 넣고 다시 전압을 측정합니다. 용액의 색과 전압이 어떻게 변하는지 관찰하세요.', dur: 8 },
+    { html: sNH3zn, chip: 'STEP 4', title: '암모니아수 넣기 · Zn(NO₃)₂ 쪽', text: '이어서 Zn(NO₃)₂ 용액에도 암모니아수를 넣고 전압을 측정합니다. 앞의 두 측정값과 비교해 보세요.', dur: 8 },
+    { html: s6, chip: 'STEP 5', title: '정리 및 반납', text: '전선을 분리하고 금속판을 꺼낸 뒤, 모든 금속판은 사포로 닦아서 반납합니다. 용액은 지정된 폐액통에 버립니다.', dur: 8 },
+    { html: s7, chip: '안전', title: '안전 수칙', text: '보안경과 장갑을 꼭 착용하고, 용액이 피부에 묻으면 물로 씻습니다. 금속 이온 용액은 절대 하수구에 버리지 않고, 암모니아수는 냄새를 직접 맡지 말고 환기되는 곳에서 다룹니다.', dur: 7 },
   ];
 
   const els = scenes.map((s, i) => {
