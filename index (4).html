@@ -1,0 +1,623 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>화학전지 실험 애니메이션</title>
+<style>
+  :root {
+    --ol: #2b2d42;
+    --bg: #fdf8ec;
+    --panel: #ffffff;
+    --accent: #e07a3c;
+    --blue: #3a86ff;
+    --muted: #5c6270;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ol);
+    font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", system-ui, sans-serif;
+    word-break: keep-all;
+  }
+  .app {
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 16px 16px 24px;
+    background: var(--bg);
+  }
+  .stage {
+    width: min(100%, calc((100vh - 230px) * 16 / 9));
+    min-width: 280px;
+    border: 4px solid var(--ol);
+    border-radius: 20px;
+    overflow: hidden;
+    background: linear-gradient(#e6f4ff, #fffaf0 75%);
+    box-shadow: 0 8px 0 var(--ol);
+  }
+  .stage svg { display: block; width: 100%; height: auto; }
+
+  .caption {
+    width: min(100%, calc((100vh - 230px) * 16 / 9));
+    margin-top: 22px;
+    background: var(--panel);
+    border: 3px solid var(--ol);
+    border-radius: 16px;
+    padding: 14px 18px;
+    min-height: 96px;
+  }
+  .caption .chip {
+    display: inline-block;
+    background: var(--accent); color: #fff;
+    font-weight: 800; font-size: 14px;
+    padding: 3px 12px; border-radius: 999px;
+    margin-bottom: 6px;
+  }
+  .caption .title { font-size: 22px; font-weight: 800; margin: 0 0 4px; }
+  .caption .text { font-size: 17px; line-height: 1.6; margin: 0; color: var(--muted); }
+
+  .controls {
+    width: min(100%, calc((100vh - 230px) * 16 / 9));
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 14px;
+  }
+  .btn {
+    font: inherit; font-weight: 800; font-size: 16px;
+    border: 3px solid var(--ol); border-radius: 12px;
+    background: #fff; color: var(--ol);
+    padding: 8px 16px; cursor: pointer;
+    box-shadow: 0 4px 0 var(--ol);
+    transition: transform .08s, box-shadow .08s;
+  }
+  .btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ol); }
+  .btn.primary { background: #ffd23f; }
+  .btn.on { background: #8ee3c8; }
+  .btn:disabled { opacity: .4; cursor: default; }
+  .dots { display: flex; gap: 6px; margin: 0 6px; }
+  .dot {
+    width: 14px; height: 14px; border-radius: 50%;
+    border: 2px solid var(--ol); background: #fff; cursor: pointer; padding: 0;
+  }
+  .dot.active { background: var(--accent); }
+  .foot { margin-top: 14px; font-size: 14px; color: var(--muted); }
+  .foot a { color: var(--muted); }
+
+  /* ---------- SVG styling ---------- */
+  svg text { font-family: inherit; font-weight: 800; fill: var(--ol); }
+  .lbl { font-size: 18px; text-anchor: middle; }
+  .big { paint-order: stroke; stroke: #fff; stroke-width: 8px; stroke-linejoin: round; }
+
+  .scene { display: none; }
+  .scene.active { display: inline; }
+
+  .pop, .pulse, .spin { transform-box: fill-box; transform-origin: center; }
+
+  @keyframes pop { 0% { transform: scale(0); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes fadeOut { to { opacity: 0; } }
+  @keyframes drop {
+    0% { transform: translateY(var(--dy)); opacity: 0; }
+    15% { opacity: 1; }
+    100% { transform: translateY(0); opacity: 1; }
+  }
+  @keyframes lift { to { transform: translateY(var(--dy)); } }
+  @keyframes away { to { transform: translate(var(--mx), var(--my)); opacity: .0; } }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+  @keyframes rub { from { transform: translateX(0); } to { transform: translateX(var(--dx)); } }
+  @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+  @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes rise {
+    0% { transform: translate(0, 0); opacity: 0; }
+    20% { opacity: 1; }
+    100% { transform: translate(var(--dx), var(--dy2)); opacity: 0; }
+  }
+  @keyframes fall {
+    0% { transform: translateY(0); opacity: 0; }
+    20% { opacity: 1; }
+    100% { transform: translateY(40px); opacity: 0; }
+  }
+
+  .draw { stroke-dasharray: 1; stroke-dashoffset: 1; }
+
+  .play .pop  { animation: pop .55s cubic-bezier(.34,1.56,.64,1) var(--d, 0s) both; }
+  .play .fi   { animation: fadeIn .5s ease var(--d, 0s) both; }
+  .play .fo   { animation: fadeOut .6s ease var(--d, 0s) forwards; }
+  .play .drop { animation: drop 1s cubic-bezier(.45,0,.35,1.15) var(--d, 0s) both; }
+  .play .lift { animation: lift 1s ease-in-out var(--d, 0s) forwards; }
+  .play .away { animation: away .9s ease-in var(--d, 0s) forwards; }
+  .play .draw { animation: draw 1s ease var(--d, 0s) forwards; }
+  .play .rub  { animation: rub .55s ease-in-out var(--d, 0s) var(--n, 4) alternate both; }
+  .play .bob  { animation: bob 2.2s ease-in-out var(--d, 0s) infinite; }
+  .play .pulse{ animation: pulse 1.2s ease-in-out var(--d, 0s) infinite; }
+  .play .spin { animation: spin 2s linear var(--d, 0s) infinite; transform-box: view-box; }
+  .play .rise { animation: rise 2.2s ease-out var(--d, 0s) infinite; }
+  .play .fall { animation: fall 1s ease-in var(--d, 0s) infinite; }
+
+  @media (max-width: 600px) {
+    .caption .title { font-size: 19px; }
+    .caption .text { font-size: 15.5px; }
+    .btn { font-size: 14px; padding: 7px 11px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .play * { animation-duration: .01s !important; animation-iteration-count: 1 !important; }
+  }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+  <div class="stage">
+    <svg id="svg" viewBox="0 0 800 450" role="img" aria-label="화학전지 실험 과정 애니메이션">
+      <defs>
+        <pattern id="grit" width="10" height="10" patternUnits="userSpaceOnUse">
+          <rect width="10" height="10" fill="#c99a58"/>
+          <circle cx="3" cy="3" r="1.3" fill="#8a6230"/>
+          <circle cx="8" cy="7" r="1.1" fill="#8a6230"/>
+        </pattern>
+        <marker id="arrowB" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+          <path d="M0 0 L10 5 L0 10z" fill="#3a86ff"/>
+        </marker>
+      </defs>
+      <g id="s0" class="scene"></g>
+      <g id="s1" class="scene"></g>
+      <g id="s2" class="scene"></g>
+      <g id="s3" class="scene"></g>
+      <g id="s4" class="scene"></g>
+      <g id="s5" class="scene"></g>
+      <g id="s6" class="scene"></g>
+      <g id="s7" class="scene"></g>
+    </svg>
+  </div>
+
+  <div class="caption" aria-live="polite">
+    <span class="chip" id="capChip"></span>
+    <p class="title" id="capTitle"></p>
+    <p class="text" id="capText"></p>
+  </div>
+
+  <div class="controls">
+    <button class="btn" id="prev">◀ 이전</button>
+    <div class="dots" id="dots"></div>
+    <button class="btn" id="replay">⟳ 다시보기</button>
+    <button class="btn primary" id="next">다음 ▶</button>
+    <button class="btn" id="auto">자동 넘김</button>
+    <button class="btn" id="fs">⛶ 전체화면</button>
+  </div>
+
+  <div class="foot">키보드 ← → 로 넘길 수 있어요 · <a href="guide.html">글로 보기</a></div>
+</div>
+
+<script>
+(() => {
+  const OL = '#2b2d42';
+  const CU = '#e07a3c', ZN = '#b5c0cb';
+  const CU_SOL = '#4ea8de', ZN_SOL = '#d6eef8';
+  const BRIDGE = 'M250 365 V192 Q250 170 272 170 H528 Q550 170 550 192 V365';
+  const EPATH = 'M200 207 C200 110 330 170 365 118 L435 118 C470 170 600 110 600 207';
+
+  const st = (d, extra = '') => `style="--d:${d}s;${extra}"`;
+
+  const table = () =>
+    `<rect x="0" y="398" width="800" height="52" fill="#dcb583"/>
+     <rect x="0" y="398" width="800" height="7" fill="#b98a57"/>`;
+
+  const beakerBack = (x, y, liq) =>
+    `<g transform="translate(${x} ${y})">
+       <rect x="2" y="4" width="156" height="164" rx="14" fill="#fff" opacity=".45"/>
+       <rect x="4" y="50" width="152" height="114" rx="8" fill="${liq}"/>
+       <path d="M6 50 H154" stroke="#fff" stroke-width="3" opacity=".7"/>
+     </g>`;
+
+  const beakerFront = (x, y, liq) =>
+    `<g transform="translate(${x} ${y})">
+       <rect x="4" y="50" width="152" height="114" rx="8" fill="${liq}" opacity=".35"/>
+       <path d="M2 2 V154 Q2 168 16 168 H144 Q158 168 158 154 V2" fill="none" stroke="${OL}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+       <path d="M14 24 V140" stroke="#fff" stroke-width="6" stroke-linecap="round" opacity=".85"/>
+       <path d="M132 74 H152 M140 98 H152 M132 122 H152" stroke="${OL}" stroke-width="2.5" opacity=".45"/>
+     </g>`;
+
+  const plate = (x, y, m, w = 30, h = 180) =>
+    `<g>
+       <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="3" fill="${m === 'Cu' ? CU : ZN}" stroke="${OL}" stroke-width="3"/>
+       <rect x="${x + 5}" y="${y + 6}" width="6" height="${h - 12}" rx="3" fill="#fff" opacity=".5"/>
+       <text x="${x + w / 2 + 2}" y="${y + 30}" font-size="15" text-anchor="middle">${m}</text>
+     </g>`;
+
+  const sparkle = (x, y, d, s = 1) =>
+    `<g transform="translate(${x} ${y}) scale(${s})"><path class="pop" ${st(d)} d="M0 -16 L4 -4 L16 0 L4 4 L0 16 L-4 4 L-16 0 L-4 -4Z" fill="#fff" stroke="#ffb703" stroke-width="2.5" stroke-linejoin="round"/></g>`;
+
+  const voltmeter = (displayId, text = '0.00') =>
+    `<g>
+       <rect x="320" y="28" width="160" height="104" rx="16" fill="#ffd23f" stroke="${OL}" stroke-width="4"/>
+       <rect x="338" y="42" width="124" height="48" rx="8" fill="#163828" stroke="${OL}" stroke-width="3"/>
+       <text ${displayId ? `id="${displayId}"` : ''} x="452" y="78" font-size="30" text-anchor="end" style="fill:#7dffa6;font-family:'Courier New',monospace">${text}</text>
+       <text x="458" y="78" font-size="0"></text>
+       <circle cx="365" cy="114" r="9" fill="#222" stroke="${OL}" stroke-width="2"/>
+       <circle cx="435" cy="114" r="9" fill="#e63946" stroke="${OL}" stroke-width="2"/>
+       <text x="392" y="106" font-size="13" text-anchor="middle">V</text>
+     </g>`;
+
+  // Cu–Zn cell. anim=true: assemble step by step. mid: extra markup inside the solution layer.
+  const cell = (anim, mid = '', top = '') => {
+    const a = (cls, d, extra = '') => anim ? `class="${cls}" ${st(d, extra)}` : '';
+    return `
+      ${table()}
+      ${beakerBack(120, 230, ZN_SOL)}
+      ${beakerBack(520, 230, CU_SOL)}
+      <g ${a('drop', .3, '--dy:-210px')}>${plate(185, 205, 'Zn')}</g>
+      <g ${a('drop', .8, '--dy:-210px')}>${plate(585, 205, 'Cu')}</g>
+      <g ${a('drop', 1.6, '--dy:-180px')}>
+        <path d="${BRIDGE}" fill="none" stroke="${OL}" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="${BRIDGE}" fill="none" stroke="#fff0b8" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+        <text x="400" y="160" font-size="18" text-anchor="middle" class="big">염다리</text>
+      </g>
+      ${mid}
+      ${beakerFront(120, 230, ZN_SOL)}
+      ${beakerFront(520, 230, CU_SOL)}
+      <text x="200" y="430" class="lbl">Zn(NO₃)₂ 용액</text>
+      <text x="600" y="430" class="lbl">Cu(NO₃)₂ 용액</text>
+      <g ${a('pop', 2.4)}>${voltmeter(anim ? '' : 'volt', anim ? '0.00' : '0.00')}</g>
+      <g ${a('fi', 3.0)}><path d="M200 207 C200 110 330 170 365 118" pathLength="1" fill="none" stroke="#222" stroke-width="5" stroke-linecap="round" ${anim ? `class="draw" ${st(3.0)}` : ''}/></g>
+      <g ${a('fi', 3.5)}><path d="M600 207 C600 110 470 170 435 118" pathLength="1" fill="none" stroke="#e63946" stroke-width="5" stroke-linecap="round" ${anim ? `class="draw" ${st(3.5)}` : ''}/></g>
+      <g ${a('pop', 3.0)}><rect x="191" y="200" width="18" height="16" rx="3" fill="#222" stroke="${OL}" stroke-width="2"/></g>
+      <g ${a('pop', 3.5)}><rect x="591" y="200" width="18" height="16" rx="3" fill="#e63946" stroke="${OL}" stroke-width="2"/></g>
+      ${top}`;
+  };
+
+  // ---------- Scene 0: title ----------
+  const s0 = `
+    ${sparkle(150, 90, .6)}${sparkle(660, 120, .9, .8)}${sparkle(610, 60, 1.2, .6)}
+    <g class="pop" ${st(0)}><text x="400" y="160" font-size="88" text-anchor="middle" class="big">화학전지</text></g>
+    <g class="fi" ${st(.5)}><text x="400" y="212" font-size="22" text-anchor="middle" style="fill:#5c6270">Cu · Zn 금속과 이온 용액으로 전기를 만들어요</text></g>
+    <g class="fi" ${st(.8)}>
+      <g class="bob" ${st(0)}>
+        <g transform="translate(205 245) scale(.62)">${beakerBack(0, 0, ZN_SOL)}${plate(65, -25, 'Zn')}${beakerFront(0, 0, ZN_SOL)}</g>
+      </g>
+      <g class="bob" ${st(.6)}>
+        <g transform="translate(497 245) scale(.62)">${beakerBack(0, 0, CU_SOL)}${plate(65, -25, 'Cu')}${beakerFront(0, 0, CU_SOL)}</g>
+      </g>
+      <g class="pulse" ${st(0)}>
+        <path d="M410 255 L378 315 H402 L388 365 L428 298 H404 Z" fill="#ffd23f" stroke="${OL}" stroke-width="4" stroke-linejoin="round"/>
+      </g>
+    </g>
+    <g class="pop" ${st(1.3)} id="startBtn" style="cursor:pointer">
+      <rect x="320" y="388" width="160" height="46" rx="23" fill="${CU}" stroke="${OL}" stroke-width="4"/>
+      <text x="400" y="418" font-size="20" text-anchor="middle" style="fill:#fff">시작하기 ▶</text>
+    </g>`;
+
+  // ---------- Scene 1: materials ----------
+  const item = (x, y, d, art, label, note = '') =>
+    `<g transform="translate(${x} ${y})"><g class="pop" ${st(d)}>
+       <circle r="62" fill="#fff" stroke="${OL}" stroke-width="3" opacity=".9"/>
+       ${art}
+       <text y="88" class="lbl" font-size="17">${label}</text>
+       ${note ? `<text y="108" class="lbl" font-size="13" style="fill:#5c6270">${note}</text>` : ''}
+     </g></g>`;
+  const miniBeaker = (liq) => `<g transform="scale(.42) translate(-80 -100)">${beakerBack(0, 0, liq)}${beakerFront(0, 0, liq)}</g>`;
+  const s1 = `
+    <text x="400" y="50" font-size="32" text-anchor="middle" class="big">준비물</text>
+    ${item(100, 140, .1, plate(-15, -45, 'Cu', 30, 90), 'Cu 금속판')}
+    ${item(250, 140, .3, plate(-15, -45, 'Zn', 30, 90), 'Zn 금속판')}
+    ${item(400, 140, .5, miniBeaker(CU_SOL), 'Cu(NO₃)₂ 용액', '푸른색')}
+    ${item(550, 140, .7, miniBeaker(ZN_SOL), 'Zn(NO₃)₂ 용액', '무색')}
+    ${item(700, 140, .9, `
+      <path d="M-30 36 V-18 Q-30 -36 -12 -36 H12 Q30 -36 30 -18 V36" fill="none" stroke="${OL}" stroke-width="18" stroke-linecap="round"/>
+      <path d="M-30 36 V-18 Q-30 -36 -12 -36 H12 Q30 -36 30 -18 V36" fill="none" stroke="#fff0b8" stroke-width="11" stroke-linecap="round"/>`,
+      '염다리', '시판 제품')}
+    ${item(175, 320, 1.1, `
+      <rect x="-40" y="-36" width="80" height="62" rx="10" fill="#ffd23f" stroke="${OL}" stroke-width="3"/>
+      <rect x="-30" y="-27" width="60" height="26" rx="5" fill="#163828"/>
+      <text x="22" y="-8" font-size="15" text-anchor="end" style="fill:#7dffa6;font-family:monospace">0.00</text>
+      <circle cx="-14" cy="13" r="6" fill="#222"/><circle cx="14" cy="13" r="6" fill="#e63946"/>`,
+      '전압계', '멀티미터')}
+    ${item(325, 320, 1.3, `
+      <path d="M-34 30 C-30 -20 0 0 -6 -34" fill="none" stroke="#222" stroke-width="5" stroke-linecap="round"/>
+      <path d="M0 30 C10 -20 34 0 30 -34" fill="none" stroke="#e63946" stroke-width="5" stroke-linecap="round"/>
+      <rect x="-14" y="-44" width="16" height="14" rx="3" fill="#222" stroke="${OL}" stroke-width="2"/>
+      <rect x="22" y="-44" width="16" height="14" rx="3" fill="#e63946" stroke="${OL}" stroke-width="2"/>`,
+      '집게 전선', '빨강 · 검정')}
+    ${item(475, 320, 1.5, `
+      <rect x="-40" y="-28" width="80" height="56" rx="6" fill="url(#grit)" stroke="${OL}" stroke-width="3" transform="rotate(-8)"/>`,
+      '사포')}
+    ${item(625, 320, 1.7, `
+      <path d="M-44 -6 Q0 -26 44 -6" fill="none" stroke="${OL}" stroke-width="5"/>
+      <rect x="-38" y="-20" width="34" height="28" rx="11" fill="#bde0fe" stroke="${OL}" stroke-width="3"/>
+      <rect x="4" y="-20" width="34" height="28" rx="11" fill="#bde0fe" stroke="${OL}" stroke-width="3"/>
+      <rect x="-6" y="-10" width="12" height="7" fill="${OL}"/>
+      <g transform="translate(0 30) scale(.45)">${glove()}</g>`,
+      '보안경 · 장갑')}`;
+
+  function glove() {
+    return `<g>
+      <rect x="-24" y="-38" width="11" height="34" rx="5.5" fill="#7fd1ae" stroke="${OL}" stroke-width="3"/>
+      <rect x="-12" y="-46" width="11" height="42" rx="5.5" fill="#7fd1ae" stroke="${OL}" stroke-width="3"/>
+      <rect x="0" y="-44" width="11" height="40" rx="5.5" fill="#7fd1ae" stroke="${OL}" stroke-width="3"/>
+      <rect x="12" y="-36" width="11" height="32" rx="5.5" fill="#7fd1ae" stroke="${OL}" stroke-width="3"/>
+      <ellipse cx="-30" cy="6" rx="8" ry="18" transform="rotate(-35 -30 6)" fill="#7fd1ae" stroke="${OL}" stroke-width="3"/>
+      <rect x="-25" y="-12" width="49" height="54" rx="14" fill="#7fd1ae" stroke="${OL}" stroke-width="3"/>
+    </g>`;
+  }
+
+  // ---------- Scene 2: dip plates ----------
+  // one small beaker (scaled .8) centered at cx, with a plate dropping in
+  const dipSet = (cx, liq, metal, d) =>
+    `<g transform="translate(${cx - 64} 262) scale(.8)">
+       ${beakerBack(0, 0, liq)}
+       <g class="drop" ${st(d, '--dy:-220px')}>${plate(65, -25, metal)}</g>
+       ${beakerFront(0, 0, liq)}
+     </g>
+     <text x="${cx}" y="430" class="lbl" font-size="16">${liq === CU_SOL ? 'Cu(NO₃)₂' : 'Zn(NO₃)₂'}</text>`;
+  const groupTag = (cx, metal, d) =>
+    `<g class="pop" ${st(d)}>
+       <rect x="${cx - 70}" y="196" width="140" height="38" rx="19" fill="${metal === 'Cu' ? CU : ZN}" stroke="${OL}" stroke-width="3"/>
+       <text x="${cx}" y="222" font-size="19" text-anchor="middle" ${metal === 'Cu' ? 'style="fill:#fff"' : ''}>${metal} 판</text>
+     </g>`;
+  const s2 = `
+    ${table()}
+    <path d="M400 190 V398" stroke="${OL}" stroke-width="3" stroke-dasharray="8 8" opacity=".35"/>
+    ${groupTag(200, 'Zn', .1)}
+    ${groupTag(600, 'Cu', 1.5)}
+    ${dipSet(115, CU_SOL, 'Zn', .3)}
+    ${dipSet(285, ZN_SOL, 'Zn', .8)}
+    ${dipSet(515, CU_SOL, 'Cu', 1.7)}
+    ${dipSet(685, ZN_SOL, 'Cu', 2.2)}
+    <g class="pop" ${st(3.4)}>
+      <rect x="170" y="26" width="460" height="64" rx="32" fill="#fff" stroke="${OL}" stroke-width="4"/>
+      <text x="400" y="67" font-size="21" text-anchor="middle">🔍 어느 쪽 용액의 색이 변할까요?</text>
+    </g>
+    <g class="pop" ${st(3.0)}>
+      <rect x="320" y="110" width="160" height="40" rx="20" fill="#ffd23f" stroke="${OL}" stroke-width="3"/>
+      <circle cx="346" cy="130" r="11" fill="#fff" stroke="${OL}" stroke-width="2.5"/>
+      <path d="M346 130 V122" stroke="${OL}" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M346 130 L353 130" stroke="${CU}" stroke-width="2.5" stroke-linecap="round">
+        <animateTransform attributeName="transform" type="rotate" from="0 346 130" to="360 346 130" dur="2s" repeatCount="indefinite"/>
+      </path>
+      <text x="410" y="136" font-size="16" text-anchor="middle">10초 관찰</text>
+    </g>`;
+
+  // ---------- Scene 3: sanding ----------
+  const patches = (y, color, d0) => [[250, 0, 24, 13], [345, 12, 30, 12], [440, -6, 22, 14], [530, 8, 28, 11]]
+    .map(([x, dy, rx, ry], i) => `<ellipse class="fo" ${st(d0 + i * .45)} cx="${x}" cy="${y + dy}" rx="${rx}" ry="${ry}" fill="${color}" opacity=".75"/>`).join('');
+  const sander = (y, dIn, dRub, dOut) =>
+    `<g class="fo" ${st(dOut)}><g class="fi" ${st(dIn)}><g class="rub" ${st(dRub, '--dx:300px;--n:4')}>
+       <rect x="190" y="${y}" width="120" height="96" rx="10" fill="url(#grit)" stroke="${OL}" stroke-width="4"/>
+       <text x="250" y="${y + 56}" font-size="20" text-anchor="middle" class="big">사포</text>
+     </g></g></g>`;
+  const s3 = `
+    <g class="pop" ${st(0)}>
+      <rect x="190" y="22" width="420" height="58" rx="29" fill="#ffd23f" stroke="${OL}" stroke-width="4"/>
+      <text x="400" y="60" font-size="23" text-anchor="middle">⚠ 전지 실험 전에 반드시!</text>
+    </g>
+    <text x="170" y="174" font-size="20" text-anchor="end">Zn 판</text>
+    <text x="170" y="304" font-size="20" text-anchor="end">Cu 판</text>
+    <rect x="190" y="132" width="420" height="68" rx="6" fill="${ZN}" stroke="${OL}" stroke-width="4"/>
+    <rect x="198" y="140" width="404" height="8" rx="4" fill="#fff" opacity=".5"/>
+    <rect x="190" y="262" width="420" height="68" rx="6" fill="${CU}" stroke="${OL}" stroke-width="4"/>
+    <rect x="198" y="270" width="404" height="8" rx="4" fill="#fff" opacity=".5"/>
+    ${patches(168, '#5e5048', .6)}
+    ${patches(298, '#5a3a24', 3.4)}
+    ${sander(118, .2, .3, 2.6)}
+    ${sander(248, 2.9, 3.0, 5.3)}
+    ${sparkle(300, 160, 2.7)}${sparkle(470, 175, 2.9, .8)}${sparkle(560, 150, 3.1, .7)}
+    ${sparkle(290, 290, 5.4)}${sparkle(450, 305, 5.6, .8)}${sparkle(570, 285, 5.8, .7)}
+    <g class="pop" ${st(6.0)}><text x="400" y="390" font-size="24" text-anchor="middle" class="big">✨ 금속 광택이 보일 때까지!</text></g>`;
+
+  // ---------- Scene 4: assemble cell ----------
+  const s4 = cell(true, '', `
+    <g class="pop" ${st(0)}>
+      <rect x="18" y="26" width="270" height="56" rx="14" fill="#ff6b6b" stroke="${OL}" stroke-width="4"/>
+      <text x="153" y="61" font-size="21" text-anchor="middle" style="fill:#fff">같은 금속 이온 용액에!</text>
+    </g>
+    <g class="pop" ${st(4.2)}>
+      <rect x="532" y="22" width="250" height="84" rx="14" fill="#fff" stroke="${OL}" stroke-width="4"/>
+      <circle cx="556" cy="50" r="8" fill="#e63946"/><text x="572" y="56" font-size="18">빨강 집게 → Cu 판</text>
+      <circle cx="556" cy="82" r="8" fill="#222"/><text x="572" y="88" font-size="18">검정 집게 → Zn 판</text>
+    </g>`);
+
+  // ---------- Scene 5: measure ----------
+  const ions = [0, 1, 2].map(i => `<g class="cat"><circle r="9" fill="#f4a261" stroke="${OL}" stroke-width="2"/><text y="5" font-size="14" text-anchor="middle">+</text></g>`).join('')
+             + [0, 1, 2].map(i => `<g class="an"><circle r="9" fill="#52c7b8" stroke="${OL}" stroke-width="2"/><text y="5" font-size="16" text-anchor="middle">−</text></g>`).join('');
+  const floaters = `<text class="rise" ${st(0, '--dx:-22px;--dy2:-40px')} x="160" y="378" font-size="15" text-anchor="middle" style="fill:#4a4f5c">Zn²⁺</text>`
+                 + `<text class="rise" ${st(.6, '--dx:-26px;--dy2:0px')} x="656" y="384" font-size="15" text-anchor="middle" style="fill:#0b3d62">Cu²⁺</text>`;
+  const s5 = cell(false,
+    `<path id="bPath" d="${BRIDGE}" fill="none" stroke="none"/>${ions}${floaters}`,
+    `<path id="ePath" d="${EPATH}" fill="none" stroke="none"/>
+     ${[0,1,2,3,4,5].map(() => `<g class="el"><circle r="10" fill="#3a86ff" stroke="#fff" stroke-width="2"/><text y="4" font-size="11" text-anchor="middle" style="fill:#fff">e⁻</text></g>`).join('')}
+     <g class="pop" ${st(.2)}>
+       <rect x="16" y="24" width="276" height="70" rx="14" fill="#fff" stroke="${OL}" stroke-width="4"/>
+       <text x="154" y="52" font-size="17" text-anchor="middle">(−)극 · 산화</text>
+       <text x="154" y="80" font-size="18" text-anchor="middle" style="font-family:'Times New Roman',serif">Zn → Zn²⁺ + 2e⁻</text>
+     </g>
+     <g class="pop" ${st(.5)}>
+       <rect x="508" y="24" width="276" height="70" rx="14" fill="#fff" stroke="${OL}" stroke-width="4"/>
+       <text x="646" y="52" font-size="17" text-anchor="middle">(+)극 · 환원</text>
+       <text x="646" y="80" font-size="18" text-anchor="middle" style="font-family:'Times New Roman',serif">Cu²⁺ + 2e⁻ → Cu</text>
+     </g>
+     <g class="pop" ${st(2.2)}>
+       <rect x="300" y="300" width="200" height="40" rx="20" fill="#fff" stroke="${OL}" stroke-width="3"/>
+       <text x="400" y="326" font-size="16" text-anchor="middle">이론값 1.10 V와 비교</text>
+     </g>`);
+
+  // ---------- Scene 6: cleanup ----------
+  const card = (x, n, d, label, art) =>
+    `<g class="pop" ${st(d)}>
+       <rect x="${x}" y="100" width="170" height="236" rx="18" fill="#fff" stroke="${OL}" stroke-width="4"/>
+       <circle cx="${x + 26}" cy="126" r="16" fill="${CU}" stroke="${OL}" stroke-width="3"/>
+       <text x="${x + 26}" y="132" font-size="17" text-anchor="middle" style="fill:#fff">${n}</text>
+       <text x="${x + 85}" y="318" class="lbl" font-size="18">${label}</text>
+     </g>
+     <g class="fi" ${st(d + .3)}>${art}</g>`;
+  const s6 = `
+    <text x="400" y="62" font-size="32" text-anchor="middle" class="big">정리 및 반납</text>
+    ${card(30, 1, .1, '전선 분리', `
+      ${plate(100, 170, 'Zn', 30, 120)}
+      <g class="away" ${st(1.0, '--mx:40px;--my:-45px')}>
+        <path d="M115 166 C115 130 150 150 160 120" fill="none" stroke="#222" stroke-width="5" stroke-linecap="round"/>
+        <rect x="106" y="160" width="18" height="16" rx="3" fill="#222" stroke="${OL}" stroke-width="2"/>
+      </g>`)}
+    ${card(220, 2, .8, '금속판 꺼내기', `
+      <g transform="translate(257 192) scale(.6)">${beakerBack(0, 0, CU_SOL)}</g>
+      <g class="lift" ${st(1.8, '--dy:-50px')}>${plate(290, 175, 'Cu', 30, 105)}</g>
+      <g transform="translate(257 192) scale(.6)">${beakerFront(0, 0, CU_SOL)}</g>`)}
+    ${card(410, 3, 1.6, '사포로 닦기', `
+      <rect x="430" y="208" width="130" height="40" rx="5" fill="${ZN}" stroke="${OL}" stroke-width="3"/>
+      <g class="rub" ${st(2.2, '--dx:70px;--n:6')}><rect x="432" y="196" width="56" height="62" rx="8" fill="url(#grit)" stroke="${OL}" stroke-width="3"/></g>
+      ${sparkle(470, 180, 3.8, .8)}${sparkle(530, 270, 4.0, .7)}`)}
+    ${card(600, 4, 2.4, '반납', `
+      <rect x="622" y="238" width="126" height="22" rx="6" fill="#9aa3ad" stroke="${OL}" stroke-width="3"/>
+      <rect x="636" y="214" width="98" height="12" rx="3" fill="${CU}" stroke="${OL}" stroke-width="2.5"/>
+      <rect x="636" y="226" width="98" height="12" rx="3" fill="${ZN}" stroke="${OL}" stroke-width="2.5"/>
+      <g class="pop" ${st(3.6)}>
+        <circle cx="685" cy="172" r="26" fill="#2ec4b6" stroke="${OL}" stroke-width="4"/>
+        <path d="M672 172 L682 182 L700 162" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+      </g>`)}
+    <g class="pop" ${st(4.4)}>
+      <rect x="215" y="360" width="370" height="54" rx="27" fill="#ffd23f" stroke="${OL}" stroke-width="4"/>
+      <text x="400" y="395" font-size="20" text-anchor="middle">🧪 사용한 용액은 지정 폐액통에!</text>
+    </g>`;
+
+  // ---------- Scene 7: safety ----------
+  const sCard = (x, d, label, art) =>
+    `<g class="pop" ${st(d)}>
+       <rect x="${x}" y="100" width="170" height="236" rx="18" fill="#fff" stroke="${OL}" stroke-width="4"/>
+       <g transform="translate(${x + 85} 200)">${art}</g>
+       <text x="${x + 85}" y="310" class="lbl" font-size="18">${label}</text>
+     </g>`;
+  const s7 = `
+    <text x="400" y="62" font-size="32" text-anchor="middle" class="big">안전 수칙</text>
+    <g class="pop" ${st(2.0)}>
+      <rect x="215" y="360" width="370" height="54" rx="27" fill="#ff6b6b" stroke="${OL}" stroke-width="4"/>
+      <text x="400" y="395" font-size="20" text-anchor="middle" style="fill:#fff">실험 시작부터 끝까지 지켜요!</text>
+    </g>
+    ${sCard(30, .1, '보안경 착용', `
+      <path d="M-58 -2 Q0 -30 58 -2" fill="none" stroke="${OL}" stroke-width="6"/>
+      <rect x="-52" y="-24" width="46" height="40" rx="15" fill="#bde0fe" stroke="${OL}" stroke-width="4"/>
+      <rect x="6" y="-24" width="46" height="40" rx="15" fill="#bde0fe" stroke="${OL}" stroke-width="4"/>
+      <rect x="-8" y="-10" width="16" height="9" fill="${OL}"/>
+      <path d="M-42 -14 L-30 -2" stroke="#fff" stroke-width="4" stroke-linecap="round"/>`)}
+    ${sCard(220, .5, '장갑 착용', `<g transform="scale(1.3)">${glove()}</g>`)}
+    ${sCard(410, .9, '묻으면 물로 씻기', `
+      <path d="M-50 -40 H6 Q26 -40 26 -20 V-8" fill="none" stroke="#9aa3ad" stroke-width="16" stroke-linecap="round"/>
+      <path d="M-50 -40 H6 Q26 -40 26 -20 V-8" fill="none" stroke="${OL}" stroke-width="3" stroke-linecap="round" opacity=".3"/>
+      <rect x="-26" y="-62" width="18" height="16" rx="4" fill="#e63946" stroke="${OL}" stroke-width="3"/>
+      ${[0, .33, .66].map((d, i) => `<path class="fall" ${st(d)} d="M${20 + i * 6} 6 q-7 10 0 14 q7 -4 0 -14z" fill="#3a86ff" stroke="${OL}" stroke-width="2"/>`).join('')}`)}
+    ${sCard(600, 1.3, '하수구 버리기 금지', `
+      <circle r="38" fill="#d9dde2" stroke="${OL}" stroke-width="4"/>
+      <path d="M-26 -12 H26 M-30 0 H30 M-26 12 H26" stroke="${OL}" stroke-width="4" stroke-linecap="round"/>
+      <g class="pulse" ${st(1.8)}>
+        <circle r="50" fill="none" stroke="#e63946" stroke-width="9"/>
+        <path d="M-35 -35 L35 35" stroke="#e63946" stroke-width="9" stroke-linecap="round"/>
+      </g>`)}`;
+
+  const scenes = [
+    { html: s0, chip: '시작', title: '화학전지 실험', text: 'Cu와 Zn 금속판, 두 가지 이온 용액으로 실험 과정을 미리 살펴봅니다.', dur: 6 },
+    { html: s1, chip: '준비', title: '준비물', text: '금속판 2종, 용액 2종, 시판 염다리와 전압계·집게 전선·사포를 준비하고 보안경과 장갑을 착용합니다.', dur: 7 },
+    { html: s2, chip: 'STEP 1', title: '금속판 담그기', text: 'Zn 판과 Cu 판을 각각 Cu(NO₃)₂ 용액과 Zn(NO₃)₂ 용액 양쪽에 담그고, 약 10초 동안 어느 쪽 용액의 색이 변하는지 관찰합니다.', dur: 9 },
+    { html: s3, chip: 'STEP 2', title: '사포로 표면 정리', text: '화학전지 실험으로 넘어가기 전에 Cu 판과 Zn 판을 사포로 긁어 표면을 깨끗하게 만듭니다. 금속 광택이 보일 때까지!', dur: 9 },
+    { html: s4, chip: 'STEP 3', title: '화학전지 만들기', text: 'Zn 판은 Zn(NO₃)₂에, Cu 판은 Cu(NO₃)₂에 담그고, 염다리로 두 용액을 연결한 뒤 전압계를 연결합니다.', dur: 8 },
+    { html: s5, chip: 'STEP 3', title: '전압 측정', text: '전자는 도선을 따라 Zn에서 Cu로 이동하고, 염다리 속 이온이 양쪽 용액의 전하 균형을 맞춥니다. 값이 안정되면 읽고 이론값 1.10 V와 비교합니다.', dur: 10 },
+    { html: s6, chip: 'STEP 4', title: '정리 및 반납', text: '전선을 분리하고 금속판을 꺼낸 뒤, 모든 금속판은 사포로 닦아서 반납합니다. 용액은 지정된 폐액통에 버립니다.', dur: 8 },
+    { html: s7, chip: '안전', title: '안전 수칙', text: '보안경과 장갑을 꼭 착용하고, 용액이 피부에 묻으면 물로 씻습니다. 금속 이온 용액은 절대 하수구에 버리지 않습니다.', dur: 7 },
+  ];
+
+  const els = scenes.map((s, i) => {
+    const g = document.getElementById('s' + i);
+    g.innerHTML = s.html;
+    return g;
+  });
+
+  const dotsBox = document.getElementById('dots');
+  scenes.forEach((s, i) => {
+    const b = document.createElement('button');
+    b.className = 'dot';
+    b.setAttribute('aria-label', `${i + 1}번 장면: ${s.title}`);
+    b.onclick = () => go(i);
+    dotsBox.appendChild(b);
+  });
+
+  let cur = 0, raf = null, autoTimer = null, autoOn = false;
+
+  function stopFlow() { if (raf) cancelAnimationFrame(raf); raf = null; }
+
+  function startFlow() {
+    const g = els[5];
+    const ep = g.querySelector('#ePath'), bp = g.querySelector('#bPath');
+    const eL = ep.getTotalLength(), bL = bp.getTotalLength();
+    const electrons = [...g.querySelectorAll('.el')];
+    const cats = [...g.querySelectorAll('.cat')];
+    const ans = [...g.querySelectorAll('.an')];
+    const volt = g.querySelector('#volt');
+    const t0 = performance.now();
+    const place = (el, path, L, f) => {
+      const p = path.getPointAtLength(f * L);
+      el.setAttribute('transform', `translate(${p.x.toFixed(1)} ${p.y.toFixed(1)})`);
+    };
+    const tick = (now) => {
+      const t = (now - t0) / 1000;
+      electrons.forEach((e, i) => place(e, ep, eL, (t * 0.16 + i / electrons.length) % 1));
+      cats.forEach((e, i) => place(e, bp, bL, (t * 0.07 + i / cats.length) % 1));
+      ans.forEach((e, i) => place(e, bp, bL, 1 - ((t * 0.07 + i / ans.length + 0.17) % 1)));
+      const v = Math.min(1.10, (t / 1.8) * 1.10);
+      volt.textContent = v.toFixed(2);
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+  }
+
+  function go(i) {
+    i = Math.max(0, Math.min(scenes.length - 1, i));
+    stopFlow();
+    els.forEach(g => g.classList.remove('active', 'play'));
+    cur = i;
+    const g = els[i];
+    g.classList.add('active');
+    void g.getBoundingClientRect();
+    g.classList.add('play');
+    if (i === 5) startFlow();
+
+    const s = scenes[i];
+    document.getElementById('capChip').textContent = s.chip;
+    document.getElementById('capTitle').textContent = s.title;
+    document.getElementById('capText').textContent = s.text;
+    [...dotsBox.children].forEach((d, k) => d.classList.toggle('active', k === i));
+    document.getElementById('prev').disabled = i === 0;
+    document.getElementById('next').disabled = i === scenes.length - 1;
+    scheduleAuto();
+  }
+
+  function scheduleAuto() {
+    clearTimeout(autoTimer);
+    if (!autoOn) return;
+    if (cur === scenes.length - 1) { setAuto(false); return; }
+    autoTimer = setTimeout(() => go(cur + 1), scenes[cur].dur * 1000);
+  }
+  function setAuto(on) {
+    autoOn = on;
+    const b = document.getElementById('auto');
+    b.classList.toggle('on', on);
+    b.textContent = on ? '자동 넘김 켬' : '자동 넘김';
+    scheduleAuto();
+  }
+
+  document.getElementById('prev').onclick = () => go(cur - 1);
+  document.getElementById('next').onclick = () => go(cur + 1);
+  document.getElementById('replay').onclick = () => go(cur);
+  document.getElementById('auto').onclick = () => setAuto(!autoOn);
+  document.getElementById('fs').onclick = () => {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else document.getElementById('app').requestFullscreen?.();
+  };
+  document.getElementById('startBtn').addEventListener('click', () => go(1));
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { e.preventDefault(); go(cur + 1); }
+    if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); go(cur - 1); }
+  });
+
+  go(0);
+})();
+</script>
+</body>
+</html>
